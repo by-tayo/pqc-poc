@@ -1,0 +1,79 @@
+# EJBCA Community Edition + MariaDB — the PKI layer for pqc-poc.
+#
+# Kept as a separate compose file from docker-compose.yml (the app stack)
+# so it's an opt-in add-on, not a change to the already-working
+# `docker compose up` flow.
+#
+# Copy .env.example to .env and set your own values first (.env is
+# gitignored — never commit real credentials, even local/dev ones), then:
+#
+#   docker compose -f docker-compose.ejbca.yml up -d
+#
+# See infra/ejbca/README.md for the full setup + PQC (ML-DSA) walkthrough,
+# including the go/no-go spike result (confirmed working in EJBCA CE 9.3.7 —
+# no Enterprise license needed for plain ML-DSA-44/65/87, only for the
+# hybrid/composite classical+PQC CA feature, which this project doesn't use).
+#
+# Config below follows Keyfactor's official Docker quickstart
+# (https://docs.keyfactor.com/ejbca/latest/tutorial-start-out-with-ejbca-docker-container),
+# with two deliberate changes: credentials come from .env instead of being
+# hardcoded, and a named volume replaces the `./datadbdir` bind mount for
+# the database, since this repo already documented that bind-mounting a
+# \\wsl.localhost UNC path doesn't resolve through Docker Desktop on
+# Windows (see scripts/run_tests.sh) — a named volume sidesteps that
+# entirely and works the same on every OS.
+#
+# Explicit project name: without one, Compose defaults to the directory
+# name ("pqc-poc") for *both* this file and docker-compose.yml, so Docker
+# treats them as the same project. That means `docker compose up/down`
+# (the app stack, no -f) sees these containers as orphans of its own
+# project - `docker compose down --remove-orphans` on the app stack will
+# delete them. Naming this project separately prevents that entirely.
+name: pqc-poc-ejbca
+
+networks:
+  access-bridge:
+    driver: bridge
+  application-bridge:
+    driver: bridge
+
+services:
+  ejbca-database:
+    container_name: ejbca-database
+    image: "library/mariadb:latest"
+    networks:
+      - application-bridge
+    environment:
+      - MYSQL_ROOT_PASSWORD=${EJBCA_DB_ROOT_PASSWORD:?set in .env — copy .env.example first}
+      - MYSQL_DATABASE=ejbca
+      - MYSQL_USER=ejbca
+      - MYSQL_PASSWORD=${EJBCA_DB_PASSWORD:?set in .env — copy .env.example first}
+    volumes:
+      - mariadb-data:/var/lib/mysql:rw
+
+  ejbca-node1:
+    hostname: ejbca-node1
+    container_name: ejbca
+    image: keyfactor/ejbca-ce:latest
+    depends_on:
+      - ejbca-database
+    networks:
+      - access-bridge
+      - application-bridge
+    environment:
+      - DATABASE_JDBC_URL=jdbc:mariadb://ejbca-database:3306/ejbca?characterEncoding=UTF-8
+      - DATABASE_USER=ejbca
+      - DATABASE_PASSWORD=${EJBCA_DB_PASSWORD:?set in .env — copy .env.example first}
+      - LOG_LEVEL_APP=INFO
+      - LOG_LEVEL_SERVER=INFO
+      - TLS_SETUP_ENABLED=simple
+    ports:
+      - "8090:8080"
+      - "8443:8443"
+
+volumes:
+  # Pinned to its original name (created back when this file shared the
+  # "pqc-poc" project name with docker-compose.yml) so the `name:` change
+  # above doesn't orphan the existing data under a new volume name.
+  mariadb-data:
+    name: pqc-poc_mariadb-data

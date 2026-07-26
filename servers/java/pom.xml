@@ -1,0 +1,59 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.pqcpoc</groupId>
+  <artifactId>tls-server</artifactId>
+  <version>1.0</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <bouncycastle.version>1.85</bouncycastle.version>
+  </properties>
+
+  <dependencies>
+    <!-- JCA provider: ML-DSA KeyFactory/Signature/KeyPairGenerator -->
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk18on</artifactId>
+      <version>${bouncycastle.version}</version>
+    </dependency>
+    <!-- PEM/PKCS8 parsing (PEMParser, JcaPEMKeyConverter) -->
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk18on</artifactId>
+      <version>${bouncycastle.version}</version>
+    </dependency>
+    <!-- BCJSSE: BC's own JSSE-compatible TLS provider, needed since stock
+         JSSE (SunJSSE) doesn't recognize ML-DSA as a cert auth scheme. -->
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bctls-jdk18on</artifactId>
+      <version>${bouncycastle.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>tls-server</finalName>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.7.1</version>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/lib</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

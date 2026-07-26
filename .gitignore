@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Java
+target/
+*.class
+.gradle/
+build/
+
+# JS
+node_modules/
+npm-debug.log*
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Packet captures are large binaries — keep out of git by default
+captures/wireshark/*.pcap
+captures/wireshark/*.pcapng
+!captures/wireshark/.gitkeep
+
+# Raw metric dumps that are easy to regenerate
+results/metrics/*.tmp
+
+# Private keys are sensitive even for lab/trial certs - repo is public.
+# Certs (.pem) are fine to publish; keys stay local only.
+certs/**/*.key
+
+# Local credentials for docker-compose.ejbca.yml — see .env.example
+.env
+
+# Soft crypto token PINs for the ML-DSA CAs (infra/ejbca) — local only
+infra/ejbca/token-pins.local

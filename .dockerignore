@@ -1,0 +1,6 @@
+.git
+captures
+results
+docs
+**/node_modules
+**/target

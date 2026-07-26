@@ -1,0 +1,77 @@
+# TLS and mTLS servers for all three languages, ML-DSA-44 by default. Build
+# once per language (the *-mtls service reuses its *-tls sibling's image,
+# differing only in the MODE env var at runtime), then run:
+#
+#   docker compose build && docker compose up -d
+#
+# Host ports below are picked purely to avoid collisions between the six
+# services on one machine - each container listens on 8443 (tls) / 8444
+# (mtls) internally regardless of language.
+#
+# Your host openssl/curl almost certainly can't validate these directly -
+# see the per-language README under servers/ for why, and how to check
+# from an OpenSSL 3.5+ container instead.
+
+services:
+  python-tls:
+    build:
+      context: .
+      dockerfile: servers/python/Dockerfile
+      args:
+        ML_DSA_LEVEL: "44"
+    image: pqc-poc/python:44
+    environment:
+      MODE: tls
+    ports:
+      - "8443:8443"
+
+  python-mtls:
+    image: pqc-poc/python:44
+    depends_on:
+      - python-tls
+    environment:
+      MODE: mtls
+    ports:
+      - "8444:8444"
+
+  js-tls:
+    build:
+      context: .
+      dockerfile: servers/js/Dockerfile
+      args:
+        ML_DSA_LEVEL: "44"
+    image: pqc-poc/js:44
+    environment:
+      MODE: tls
+    ports:
+      - "8543:8443"
+
+  js-mtls:
+    image: pqc-poc/js:44
+    depends_on:
+      - js-tls
+    environment:
+      MODE: mtls
+    ports:
+      - "8544:8444"
+
+  java-tls:
+    build:
+      context: .
+      dockerfile: servers/java/Dockerfile
+      args:
+        ML_DSA_LEVEL: "44"
+    image: pqc-poc/java:44
+    environment:
+      MODE: tls
+    ports:
+      - "8643:8443"
+
+  java-mtls:
+    image: pqc-poc/java:44
+    depends_on:
+      - java-tls
+    environment:
+      MODE: mtls
+    ports:
+      - "8644:8444"
